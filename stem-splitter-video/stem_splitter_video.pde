@@ -9,12 +9,13 @@ import netP5.*;
 import processing.video.*;
 
 Movie movie;
-
-
 OscP5 oscP5;
 NetAddress dest;
 PFont f;
 PImage img;
+
+boolean updateRecv = true;
+
 
 float bx;
 float by;
@@ -24,13 +25,19 @@ boolean locked = false;
 float xOffset = 0.0; 
 float yOffset = 0.0;
 
+float startTime;
 
 void setup() {
-   movie = new Movie(this, "monkeys.mov");
-   movie.play();
+  
+   surface.setTitle("stem splitter");
+
+   movie = new Movie(this, "ken.mov");
+   movie.loop();
    movie.volume(0);
 
 
+
+  setupOSC( 5555 );
 
   f = createFont("Calibri", 15);
   textFont(f);
@@ -44,9 +51,16 @@ void setup() {
   rectMode(RADIUS);  
   
   /* start oscP5, listening for incoming messages at port 12000 */
-  oscP5 = new OscP5(this,9000);
+  //oscP5 = new OscP5(this,9000);
   dest = new NetAddress("127.0.0.1",6448);
   
+}
+
+void setupOSC( int port )
+{
+    // start oscP5, listening for incoming messages at port 12000
+    oscP5 = new OscP5( this, 9990 );
+    println("listening");
 }
 
 void movieEvent(Movie movie) {
@@ -57,10 +71,23 @@ void movieEvent(Movie movie) {
 void draw() {
       //background(255);
      img = loadImage("inputs.png");
-   image(img, 0, 0);
-   image(movie, 0, 0, 1280, 720);
     tint(255, 255, 255, 50); 
   //fill(255);
+  
+    image(img, 0, 0);
+    image(movie, 0, 0, 1280, 720);
+
+  
+   if( updateRecv )
+    {
+        // only jump once per update (e.g., once per incoming OSC message)
+        movie.jump( startTime );
+        print("here", startTime);
+        // set to false until next incoming message
+        updateRecv = false;
+    }
+    
+    
 
   text("Drag the box around to explore the soundscape!", 10, 30);
   text("x=" + bx + ", y=" + by, 10, 60);
@@ -88,6 +115,31 @@ void draw() {
   //Send the OSC message with box current position
   sendOsc();
 }
+
+// incoming osc message are forwarded to the oscEvent method.
+void oscEvent(OscMessage theOscMessage)
+{
+  // print the address pattern and the typetag of the received OscMessage
+  // print("### received an osc message.");
+  // print(" addrpattern: "+theOscMessage.addrPattern());
+  // println(" typetag: "+theOscMessage.typetag());
+
+  if( theOscMessage.checkAddrPattern("/video/pos")==true )
+  {
+    println("oscEvent method");
+    // check if the typetag is the right one
+    //if(theOscMessage.checkTypetag("if"))
+    //{
+      // set flag
+      updateRecv = true;
+      // parse theOscMessage and extract the values from the osc message arguments.
+      startTime = theOscMessage.get(0).floatValue();
+      println(" values: "+startTime);
+      return;
+    //}  
+  } 
+}
+
 
 void mousePressed() {
   if(overBox) { 

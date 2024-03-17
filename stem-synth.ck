@@ -5,6 +5,17 @@ OscMsg msg;
 // use port 12000 (default Wekinator output port)
 12000 => oscin.port;
 
+"localhost" => string hostname;
+9990 => int proscessing_port;
+
+
+OscOut xmit;
+
+xmit.dest( hostname, proscessing_port );
+
+
+
+
 // listen for "/wek/output" message with 4 floats coming in
 oscin.addAddress( "/wek/outputs, ffff" );
 // print
@@ -14,6 +25,7 @@ oscin.addAddress( "/wek/outputs, ffff" );
 // expecting 4 output dimensions
 4 => int NUM_PARAMS;
 float myParams[NUM_PARAMS];
+
 
 // envelopes for smoothing parameters
 // (alternately, can use slewing interpolators; SEE:
@@ -28,7 +40,6 @@ for( 0 => int i; i < NUM_PARAMS; i++ )
 
 
 SndBuf sounds[NUM_PARAMS];
-//  => NRev r[NUM_PARAMS] => dac;
 for (auto buf : sounds) buf => dac;
 
 
@@ -45,8 +56,29 @@ for (auto buf : sounds) buf => dac;
 
 for (0 => int i; i < NUM_PARAMS; i++){
     files[i] => sounds[i].read;
+    sounds[i].samples() => sounds[i].pos;
     // 0 => sounds[i].pos;
+    // sounds[i].length() => now;
 }
+
+// send OSC message: current file index and startTime, uniquely identifying a window
+fun void sendWindow( float startTime )
+{
+    // start the message...
+    xmit.start( "/video/pos" );
+    // add float argument
+    startTime => xmit.add;
+    // send it
+    xmit.send();
+    for (0 => int i; i < NUM_PARAMS; i++){  
+        <<<startTime $ int>>>;   
+        (startTime::second/samp)$ int=> sounds[i].pos;
+    }
+
+}
+
+sendWindow(0);
+
 
 
 fun void setParams( float params[] )
@@ -83,6 +115,7 @@ fun void map2sound()
             envs[i].value() * .5 => sounds[i].gain;
         }
         10::ms => now;
+        
     }
 }
 
@@ -90,10 +123,12 @@ fun void waitForEvent()
 {
     // array to hold params
     float p[NUM_PARAMS];
+    
 
     // infinite event loop
     while( true )
     {
+        
         // wait for OSC message to arrive
         oscin => now;
 
@@ -120,6 +155,7 @@ fun void waitForEvent()
         }
     }
 }
+
 
 // spork osc receiver loop
 spork ~waitForEvent();
