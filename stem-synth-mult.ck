@@ -34,6 +34,7 @@ oscin.addAddress( "/wek/outputs, ffff" );
 // expecting 4 output dimensions
 4 => int NUM_PARAMS;
 float myParams[NUM_PARAMS];
+0 => int song_ind;
 
 
 // envelopes for smoothing parameters
@@ -48,22 +49,32 @@ for( 0 => int i; i < NUM_PARAMS; i++ )
 }
 
 SndBuf sounds[NUM_PARAMS];
+["smile", "monkeys", "evergreen", "ken"] @=> string songs[];
 for (auto buf : sounds) buf => dac;
 
-[   
-    me.dir() + "scripts/separated/htdemucs/"+me.arg(0)+"/other.wav",
-    me.dir() + "scripts/separated/htdemucs/"+me.arg(0)+"/vocals.wav",
-    me.dir() + "scripts/separated/htdemucs/"+me.arg(0)+"/drums.wav",
-    me.dir() + "scripts/separated/htdemucs/"+me.arg(0)+"/bass.wav",
-] @=> string files[];
+fun void initialize(int pos){
+    <<<songs[song_ind]>>>;
+    [   
+        me.dir() + "scripts/separated/htdemucs/"+songs[song_ind]+"/other.wav",
+        me.dir() + "scripts/separated/htdemucs/"+songs[song_ind]+"/vocals.wav",
+        me.dir() + "scripts/separated/htdemucs/"+songs[song_ind]+"/drums.wav",
+        me.dir() + "scripts/separated/htdemucs/"+songs[song_ind]+"/bass.wav",
+    ] @=> string files[];
 
-for (0 => int i; i < NUM_PARAMS; i++){
-    files[i] => sounds[i].read;
-    sounds[i].samples() => sounds[i].pos;
-    // sounds[i].loop(0);
-    // 0 => sounds[i].pos;
-    // sounds[i].length() => now;
+    for (0 => int i; i < NUM_PARAMS; i++){
+        files[i] => sounds[i].read;
+        pos => sounds[i].pos;
+    }
+
+     // start the message...
+    xmit.start("/video/song");
+    // add float argument
+    song_ind => xmit.add;
+    // send it
+    xmit.send();
+
 }
+
 
 // send OSC message: current file index and startTime, uniquely identifying a window
 fun void sendWindow( float startTime )
@@ -75,7 +86,6 @@ fun void sendWindow( float startTime )
     // send it
     xmit.send();
     for (0 => int i; i < NUM_PARAMS; i++){  
-        // <<<startTime $ int>>>;   
         (startTime::second/samp)$ int=> sounds[i].pos;
     }
 }
@@ -94,7 +104,6 @@ fun void sendSpeed()
     }
 }
 
-sendWindow(0);
 
 fun void setParams( float params[] )
 {
@@ -192,11 +201,15 @@ while( true )
                 sendSpeed();
             }
             if (keymsg.key==44){
-                1 => multiplier;
-                sendSpeed();
+                while (Math.random2(0, songs.size()-1) == song_ind){
+                    Math.random2(0, songs.size()-1) => song_ind;
+
+                }
+                // 1 => song_ind;
+                initialize(sounds[0].pos());
             }
             else{
-                // <<<keymsg.key>>>;
+                <<<keymsg.key>>>;
             }
         }  
     }
@@ -204,7 +217,8 @@ while( true )
 
 }
 
-
+initialize(0);
+sendWindow(0);
 
 // spork osc receiver loop
 spork ~waitForEvent();

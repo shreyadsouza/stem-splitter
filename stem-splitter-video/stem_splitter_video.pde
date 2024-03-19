@@ -14,7 +14,6 @@ NetAddress dest;
 PFont f;
 PImage img;
 
-boolean updateRecv = true;
 
 
 float bx;
@@ -25,15 +24,31 @@ boolean locked = false;
 float xOffset = 0.0; 
 float yOffset = 0.0;
 
+boolean updatePos = false;
 float startTime;
+
+boolean updateSpeed = false;
+float multiplier;
+
+boolean updateSong = false;
+float songInd = 0;
+
+String videoList[] = {
+  "smile.mp4",
+  "monkeys.mp4",
+  "evergreen.mp4",
+  "ken.mp4"
+};
 
 void setup() {
   
    surface.setTitle("stem splitter");
 
-   movie = new Movie(this, "ken.mov");
+   movie = new Movie(this, "smile.mov");
    movie.loop();
    movie.volume(0);
+  
+   
 
 
 
@@ -71,26 +86,31 @@ void movieEvent(Movie movie) {
 void draw() {
       //background(255);
      img = loadImage("inputs.png");
-    tint(255, 255, 255, 50); 
-  //fill(255);
+    tint(255, 50); 
   
     image(img, 0, 0);
-    image(movie, 0, 0, 1280, 720);
-
+    //image(movie, 0, 0, 1280, 720);
+    image(movie, 40, 40, 1200, 640);
   
-   if( updateRecv )
+   if( updatePos )
     {
         // only jump once per update (e.g., once per incoming OSC message)
         movie.jump( startTime );
-        print("here", startTime);
         // set to false until next incoming message
-        updateRecv = false;
+        updatePos = false;
+    }
+       if( updateSpeed )
+    {
+        // only jump once per update (e.g., once per incoming OSC message)
+        movie.speed( multiplier );
+        // set to false until next incoming message
+        updateSpeed = false;
     }
     
     
 
-  text("Drag the box around to explore the soundscape!", 10, 30);
-  text("x=" + bx + ", y=" + by, 10, 60);
+  text("Drag the box around to explore the soundscape!", 40, 50);
+  text("x=" + bx + ", y=" + by, 40, 65);
   
   // Fill when dragging box
   fill(255);
@@ -126,17 +146,18 @@ void oscEvent(OscMessage theOscMessage)
 
   if( theOscMessage.checkAddrPattern("/video/pos")==true )
   {
-    println("oscEvent method");
-    // check if the typetag is the right one
-    //if(theOscMessage.checkTypetag("if"))
-    //{
-      // set flag
-      updateRecv = true;
+      updatePos = true;
       // parse theOscMessage and extract the values from the osc message arguments.
       startTime = theOscMessage.get(0).floatValue();
       println(" values: "+startTime);
       return;
-    //}  
+  } 
+  if( theOscMessage.checkAddrPattern("/video/speed")==true )
+  {
+      updateSpeed = true;
+      // parse theOscMessage and extract the values from the osc message arguments.
+      multiplier = theOscMessage.get(0).floatValue();
+      return;
   } 
 }
 
