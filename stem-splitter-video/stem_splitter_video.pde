@@ -30,7 +30,6 @@ float startTime;
 boolean updateSpeed = false;
 float multiplier;
 
-boolean updateSong = false;
 int songInd = 0;
 Movie[] movies = new Movie[128];
 
@@ -75,17 +74,14 @@ void setup() {
   by = height/2.0;
   rectMode(RADIUS);  
   
-  /* start oscP5, listening for incoming messages at port 12000 */
-  //oscP5 = new OscP5(this,9000);
   dest = new NetAddress("127.0.0.1",6448);
   
 }
 
 void setupOSC( int port )
 {
-    // start oscP5, listening for incoming messages at port 12000
+    // Listen for keyboard input messages from ChucK
     oscP5 = new OscP5( this, 9990 );
-    println("listening");
 }
 
 void movieEvent(Movie movie) {
@@ -108,9 +104,6 @@ void draw() {
       {
           movies[i].jump( startTime );
       }
-        // only jump once per update (e.g., once per incoming OSC message)
-        //movies[songInd].jump( startTime );
-        // set to false until next incoming message
         updatePos = false;
     }
        if( updateSpeed )
@@ -119,10 +112,7 @@ void draw() {
       {
           movies[i].speed( multiplier );
       }
-        // only jump once per update (e.g., once per incoming OSC message)
-        movies[songInd].speed( multiplier );
-        // set to false until next incoming message
-        //updateSpeed = false;
+        updateSpeed = false;
     }
     
     
@@ -157,30 +147,20 @@ void draw() {
 // incoming osc message are forwarded to the oscEvent method.
 void oscEvent(OscMessage theOscMessage)
 {
-  // print the address pattern and the typetag of the received OscMessage
-  // print("### received an osc message.");
-  // print(" addrpattern: "+theOscMessage.addrPattern());
-  // println(" typetag: "+theOscMessage.typetag());
-
   if( theOscMessage.checkAddrPattern("/video/pos")==true )
   {
       updatePos = true;
-      // parse theOscMessage and extract the values from the osc message arguments.
       startTime = theOscMessage.get(0).floatValue();
-      println(" values: "+startTime);
       return;
   } 
   if( theOscMessage.checkAddrPattern("/video/speed")==true )
   {
       updateSpeed = true;
-      // parse theOscMessage and extract the values from the osc message arguments.
       multiplier = theOscMessage.get(0).floatValue();
       return;
   } 
   if( theOscMessage.checkAddrPattern("/video/song")==true )
   {
-      updateSong = true;
-      // parse theOscMessage and extract the values from the osc message arguments.
       songInd = theOscMessage.get(0).intValue();
       return;
   } 
