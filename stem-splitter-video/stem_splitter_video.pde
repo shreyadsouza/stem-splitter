@@ -31,22 +31,32 @@ boolean updateSpeed = false;
 float multiplier;
 
 boolean updateSong = false;
-float songInd = 0;
+int songInd = 0;
+Movie[] movies = new Movie[128];
+
 
 String videoList[] = {
-  "smile.mp4",
-  "monkeys.mp4",
-  "evergreen.mp4",
-  "ken.mp4"
+  "smile.mov",
+  "monkeys.mov",
+  "evergreen.mov",
+  "glee.mov", 
+  "beautiful.mov"
 };
 
 void setup() {
   
    surface.setTitle("stem splitter");
 
-   movie = new Movie(this, "smile.mov");
-   movie.loop();
-   movie.volume(0);
+  // load each movie
+  for( int i = 0; i < videoList.length; i++ )
+  {
+      // make a Movie object for each video
+      movies[i] = new Movie(this, videoList[i] );
+      // set it to loop
+      movies[i].loop();
+      // silence the video (since the audio will come from mosaic audio)
+      movies[i].volume(0);
+  }
   
    
 
@@ -90,21 +100,29 @@ void draw() {
   
     image(img, 0, 0);
     //image(movie, 0, 0, 1280, 720);
-    image(movie, 40, 40, 1200, 640);
+    image(movies[songInd], 40, 40, 1200, 640);
   
    if( updatePos )
     {
+      for( int i = 0; i < videoList.length; i++ )
+      {
+          movies[i].jump( startTime );
+      }
         // only jump once per update (e.g., once per incoming OSC message)
-        movie.jump( startTime );
+        //movies[songInd].jump( startTime );
         // set to false until next incoming message
         updatePos = false;
     }
        if( updateSpeed )
     {
+      for( int i = 0; i < videoList.length; i++ )
+      {
+          movies[i].speed( multiplier );
+      }
         // only jump once per update (e.g., once per incoming OSC message)
-        movie.speed( multiplier );
+        movies[songInd].speed( multiplier );
         // set to false until next incoming message
-        updateSpeed = false;
+        //updateSpeed = false;
     }
     
     
@@ -157,6 +175,13 @@ void oscEvent(OscMessage theOscMessage)
       updateSpeed = true;
       // parse theOscMessage and extract the values from the osc message arguments.
       multiplier = theOscMessage.get(0).floatValue();
+      return;
+  } 
+  if( theOscMessage.checkAddrPattern("/video/song")==true )
+  {
+      updateSong = true;
+      // parse theOscMessage and extract the values from the osc message arguments.
+      songInd = theOscMessage.get(0).intValue();
       return;
   } 
 }

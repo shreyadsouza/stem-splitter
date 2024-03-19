@@ -49,7 +49,7 @@ for( 0 => int i; i < NUM_PARAMS; i++ )
 }
 
 SndBuf sounds[NUM_PARAMS];
-["smile", "monkeys", "evergreen", "ken"] @=> string songs[];
+["smile", "monkeys", "evergreen", "glee", "beautiful"] @=> string songs[];
 for (auto buf : sounds) buf => dac;
 
 fun void initialize(int pos){
@@ -200,11 +200,16 @@ while( true )
                 0.8 *=> multiplier;
                 sendSpeed();
             }
+            if (keymsg.key==80){
+                1 => multiplier;
+                sendSpeed();
+            }
             if (keymsg.key==44){
-                while (Math.random2(0, songs.size()-1) == song_ind){
-                    Math.random2(0, songs.size()-1) => song_ind;
-
+                Math.random2(0, songs.size()-1) => int new_ind;
+                while (new_ind == song_ind){
+                    Math.random2(0, songs.size()-1) => new_ind;
                 }
+                new_ind => song_ind;
                 // 1 => song_ind;
                 initialize(sounds[0].pos());
             }
