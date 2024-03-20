@@ -61,7 +61,7 @@ void setup() {
 
 
 
-  setupOSC( 5555 );
+  setupOSC( );
 
   f = createFont("Calibri", 15);
   textFont(f);
@@ -78,7 +78,7 @@ void setup() {
   
 }
 
-void setupOSC( int port )
+void setupOSC( )
 {
     // Listen for keyboard input messages from ChucK
     oscP5 = new OscP5( this, 9990 );
@@ -96,7 +96,7 @@ void draw() {
   
     image(img, 0, 0);
     //image(movie, 0, 0, 1280, 720);
-    image(movies[songInd], 40, 40, 1200, 640);
+    image(movies[songInd], 40, 40, 1200, 645);
   
    if( updatePos )
     {

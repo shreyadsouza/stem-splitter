@@ -8,28 +8,17 @@ Hid hi;
 HidMsg keymsg;
 
 1 => float multiplier;
+2 => int device; // if using monitor
+// 1 => int device; // if using laptop
 
-1 => int device;
 if( !hi.openKeyboard( device ) ) me.exit();
-
-
-
 "localhost" => string hostname;
 9990 => int proscessing_port;
-
-
 OscOut xmit;
-
 xmit.dest( hostname, proscessing_port );
-
-
-
 
 // listen for "/wek/output" message with 4 floats coming in
 oscin.addAddress( "/wek/outputs, ffff" );
-// print
-<<< "listening for OSC message from Wekinator on port 12000...", "" >>>;
-<<< " |- expecting \"/wek/outputs\" with 4 continuous parameters...", "" >>>; 
 
 // expecting 4 output dimensions
 4 => int NUM_PARAMS;
@@ -50,10 +39,11 @@ for( 0 => int i; i < NUM_PARAMS; i++ )
 
 SndBuf sounds[NUM_PARAMS];
 ["smile", "monkeys", "evergreen", "glee", "beautiful"] @=> string songs[];
+
 for (auto buf : sounds) buf => dac;
 
 fun void initialize(int pos){
-    <<<songs[song_ind]>>>;
+    chout <= "Switched song to " <= songs[song_ind] <= "!" <= IO.newline(); chout.flush();
     [   
         me.dir() + "scripts/separated/htdemucs/"+songs[song_ind]+"/other.wav",
         me.dir() + "scripts/separated/htdemucs/"+songs[song_ind]+"/vocals.wav",
@@ -65,14 +55,12 @@ fun void initialize(int pos){
         files[i] => sounds[i].read;
         pos => sounds[i].pos;
     }
-
      // start the message...
     xmit.start("/video/song");
     // add float argument
     song_ind => xmit.add;
     // send it
     xmit.send();
-
 }
 
 
@@ -156,16 +144,16 @@ fun void waitForEvent()
         while(oscin.recv(msg))
         {
             // print stuff
-            cherr <= msg.address <= " ";
+            // cherr <= msg.address <= " ";
             // unpack our 5 floats into our array p
             for( int i; i < NUM_PARAMS; i++ )
             {
                 // put into array
                 msg.getFloat(i) => p[i];
                 // print
-                cherr <= p[i] <= " ";
+                // cherr <= p[i] <= " ";
             }
-            cherr <= IO.newline();
+            // cherr <= IO.newline();
             // set the parameters
             setParams( p );
         }
@@ -175,50 +163,115 @@ fun void waitForEvent()
 
 fun void keyboardInput() {
     // infinite event loop
-while( true )
-{
-    // wait on event
-    hi => now;
-    // get one or more messages
-    while(hi.recv(keymsg))
+    while( true )
     {
-        // check for action type
-        if( keymsg.isButtonDown() )
+        // wait on event
+        hi => now;
+        // get one or more messages
+        while(hi.recv(keymsg))
         {
-            if (keymsg.key==79){
-                for (0 => int i; i < NUM_PARAMS; i++){  
-                    sounds[i].phaseOffset(0.1);
+            // check for action type
+            if( keymsg.isButtonDown() )
+            {
+                if (keymsg.key==79){
+                    for (0 => int i; i < NUM_PARAMS; i++){  
+                        sounds[i].phaseOffset(0.1);
+                    }
+                    sounds[0].pos()/44100.0 => float progress;
+                    sendWindow(progress);
+                    chout <= "Skipped ahead!"<= IO.newline(); chout.flush();
+
+                } 
+                if (keymsg.key==82){
+                    1.2 *=> multiplier;
+                    sendSpeed();
+                    chout <= "Sped up!"<= IO.newline(); chout.flush();
+
                 }
-                sounds[0].pos()/44100.0 => float progress;
-                sendWindow(progress);
-            } 
-            if (keymsg.key==82){
-                1.2 *=> multiplier;
-                sendSpeed();
-            }
-            if (keymsg.key==81){
-                0.8 *=> multiplier;
-                sendSpeed();
-            }
-            if (keymsg.key==80){
-                1 => multiplier;
-                sendSpeed();
-            }
-            if (keymsg.key==44){
-                Math.random2(0, songs.size()-1) => int new_ind;
-                while (new_ind == song_ind){
-                    Math.random2(0, songs.size()-1) => new_ind;
+                if (keymsg.key==81){
+                    0.8 *=> multiplier;
+                    sendSpeed();
+                    chout <= "Slowed down!"<= IO.newline(); chout.flush();
                 }
-                new_ind => song_ind;
-                // 1 => song_ind;
-                initialize(sounds[0].pos());
-            }
-            else{
-                <<<keymsg.key>>>;
-            }
-        }  
+                if (keymsg.key==80){
+                    1 => multiplier;
+                    sendSpeed();
+                    chout <= "Speed Reset!" <= IO.newline(); chout.flush();
+                }
+                if (keymsg.key==44){
+                    Math.random2(0, songs.size()-1) => int new_ind;
+                    while (new_ind == song_ind){
+                        Math.random2(0, songs.size()-1) => new_ind;
+                    }
+                    new_ind => song_ind;
+                    initialize(sounds[0].pos());
+                }
+                if (keymsg.key==30){
+                    if (song_ind < songs.size()){
+                        0 => song_ind;
+                        initialize(sounds[0].pos());
+                    }
+                }
+                if (keymsg.key==31){
+                    if (1 < songs.size()){
+                        1 => song_ind;
+                        initialize(sounds[0].pos());
+                    }
+                }
+                if (keymsg.key==32){
+                    if (2 < songs.size()){
+                        2 => song_ind;
+                        initialize(sounds[0].pos());
+                    }
+                }
+                if (keymsg.key==33){
+                    if (3 < songs.size()){
+                        3 => song_ind;
+                        initialize(sounds[0].pos());
+                    }
+                }
+                if (keymsg.key==34){
+                    if (4 < songs.size()){
+                        4 => song_ind;
+                        initialize(sounds[0].pos());
+                    }
+                }
+                if (keymsg.key==35){
+                    if (5 < songs.size()){
+                        5 => song_ind;
+                        initialize(sounds[0].pos());
+                    }
+                }
+                if (keymsg.key==36){
+                    if (6 < songs.size()){
+                        6 => song_ind;
+                        initialize(sounds[0].pos());
+                    }
+                }
+                if (keymsg.key==7){
+                    if (7 < songs.size()){
+                        7 => song_ind;
+                        initialize(sounds[0].pos());
+                    }
+                }
+                if (keymsg.key==38){
+                    if (8 < songs.size()){
+                        8 => song_ind;
+                        initialize(sounds[0].pos());
+                    }
+                }
+                if (keymsg.key==39){
+                    if (9 < songs.size()){
+                        9 => song_ind;
+                        initialize(sounds[0].pos());
+                    }
+                }
+                // else{
+                //     <<<keymsg.key>>>;
+                // }
+            }  
+        }
     }
-}
 
 }
 

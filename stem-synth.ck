@@ -60,7 +60,7 @@ for (auto buf : sounds) buf => dac;
 for (0 => int i; i < NUM_PARAMS; i++){
     files[i] => sounds[i].read;
     sounds[i].samples() => sounds[i].pos;
-    // sounds[i].loop(0);
+    sounds[i].loop(0);
     // 0 => sounds[i].pos;
     // sounds[i].length() => now;
 }
