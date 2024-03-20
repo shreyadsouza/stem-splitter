@@ -107,18 +107,19 @@ void draw() {
         updatePos = false;
     }
        if( updateSpeed )
-    {
-      for( int i = 0; i < videoList.length; i++ )
-      {
-          movies[i].speed( multiplier );
-      }
-        updateSpeed = false;
+        {
+          for( int i = 0; i < videoList.length; i++ )
+          {
+              movies[i].speed( multiplier );
+          }
+    
+         updateSpeed = false;
     }
     
     
 
-  text("Drag the box around to explore the soundscape!", 40, 50);
-  text("x=" + bx + ", y=" + by, 40, 65);
+  text("Drag the box around to explore the soundscape!", 50, 60);
+  text("x=" + bx + ", y=" + by, 50, 75);
   
   // Fill when dragging box
   fill(255);

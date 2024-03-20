@@ -85,6 +85,7 @@ fun void sendSpeed()
     xmit.start("/video/speed");
     // add float argument
     multiplier => xmit.add;
+    // <<<multiplier>>>;
     // send it
     xmit.send();
     for (0 => int i; i < NUM_PARAMS; i++){  
